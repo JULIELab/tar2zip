@@ -7,7 +7,7 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 
 import java.io.*;
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.nio.file.FileSystem;
 import java.nio.file.*;
 import java.util.Collections;
 
@@ -18,7 +18,7 @@ public class Tar2Zip {
             System.exit(1);
         }
         String tarPath = args[0];
-        String zipPath = args.length == 1 ? stripExtension(tarPath) + ".zip" : args[2];
+        String zipPath = args.length == 1 ? stripExtension(tarPath) + ".zip" : args[1];
 
         convert(tarPath, zipPath);
     }
@@ -26,7 +26,6 @@ public class Tar2Zip {
     private static void convert(String tarPath, String zipPath) {
         Path pathToZip = Paths.get(zipPath);
         URI uri = URI.create("jar:file:" + pathToZip.toAbsolutePath().toString());
-        System.out.println(uri);
         try (TarArchiveInputStream tarInput = new TarArchiveInputStream(new GzipCompressorInputStream(new FileInputStream(tarPath)));
              FileSystem zipFs = FileSystems.newFileSystem(uri, Collections.singletonMap("create", "true"))) {
 
@@ -35,12 +34,10 @@ public class Tar2Zip {
             while (currentEntry != null) {
                 bis = new BufferedInputStream(tarInput);
                 try (OutputStream os = new BufferedOutputStream(zipFs.provider().newOutputStream(zipFs.getPath(currentEntry.getName()), StandardOpenOption.CREATE, StandardOpenOption.WRITE))) {
-                    int allread = 0;
                     int read;
                     byte[] buf = new byte[8192];
                     while ((read = bis.read(buf)) >= 0) {
-                        os.write(buf, allread, read);
-                        allread += read;
+                        os.write(buf, 0, read);
                     }
                 }
 
