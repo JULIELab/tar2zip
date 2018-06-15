@@ -11,6 +11,9 @@ import java.nio.file.FileSystem;
 import java.nio.file.*;
 import java.util.Collections;
 
+/**
+ * Reads a .tar.gz file, iterates through its entries and writes them into a ZipFileSystem, i.e. a ZipFile.
+ */
 public class Tar2Zip {
     public static void main(String args[]) {
         if (args.length < 1 || args.length > 2) {
@@ -24,6 +27,7 @@ public class Tar2Zip {
     }
 
     private static void convert(String tarPath, String zipPath) {
+        long time = System.currentTimeMillis();
         Path pathToZip = Paths.get(zipPath);
         URI uri = URI.create("jar:file:" + pathToZip.toAbsolutePath().toString());
         try (TarArchiveInputStream tarInput = new TarArchiveInputStream(new GzipCompressorInputStream(new FileInputStream(tarPath)));
@@ -40,12 +44,13 @@ public class Tar2Zip {
                         os.write(buf, 0, read);
                     }
                 }
-
                 currentEntry = tarInput.getNextTarEntry();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+        time = System.currentTimeMillis() - time;
+        System.out.println("Conversion took " + (time/1000) + " seconds.");
     }
 
     private static String stripExtension(String tarPath) {
