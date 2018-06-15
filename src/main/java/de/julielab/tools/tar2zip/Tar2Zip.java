@@ -15,7 +15,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
- * Reads a .tar.gz file, iterates through its entries and writes them into a ZipFileSystem, i.e. a ZipFile.
+ * Reads a .tar.gz file, iterates through its entries and writes them into a ZIP file.
  */
 public class Tar2Zip {
     public static void main(String args[]) {
