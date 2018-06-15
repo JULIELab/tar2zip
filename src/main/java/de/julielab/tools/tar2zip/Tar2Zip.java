@@ -10,6 +10,8 @@ import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.*;
 import java.util.Collections;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Reads a .tar.gz file, iterates through its entries and writes them into a ZipFileSystem, i.e. a ZipFile.
@@ -29,28 +31,27 @@ public class Tar2Zip {
     private static void convert(String tarPath, String zipPath) {
         long time = System.currentTimeMillis();
         Path pathToZip = Paths.get(zipPath);
-        URI uri = URI.create("jar:file:" + pathToZip.toAbsolutePath().toString());
         try (TarArchiveInputStream tarInput = new TarArchiveInputStream(new GzipCompressorInputStream(new FileInputStream(tarPath)));
-             FileSystem zipFs = FileSystems.newFileSystem(uri, Collections.singletonMap("create", "true"))) {
+             ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipPath))) {
 
             TarArchiveEntry currentEntry = tarInput.getNextTarEntry();
             BufferedInputStream bis;
             while (currentEntry != null) {
+                zos.putNextEntry(new ZipEntry(currentEntry.getName()));
                 bis = new BufferedInputStream(tarInput);
-                try (OutputStream os = new BufferedOutputStream(zipFs.provider().newOutputStream(zipFs.getPath(currentEntry.getName()), StandardOpenOption.CREATE, StandardOpenOption.WRITE))) {
-                    int read;
-                    byte[] buf = new byte[8192];
-                    while ((read = bis.read(buf)) >= 0) {
-                        os.write(buf, 0, read);
-                    }
+                int read;
+                byte[] buf = new byte[8192];
+                while ((read = bis.read(buf)) >= 0) {
+                    zos.write(buf, 0, read);
                 }
                 currentEntry = tarInput.getNextTarEntry();
+                zos.closeEntry();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
         time = System.currentTimeMillis() - time;
-        System.out.println("Conversion took " + (time/1000) + " seconds.");
+        System.out.println("Conversion took " + (time / 1000) + " seconds.");
     }
 
     private static String stripExtension(String tarPath) {
