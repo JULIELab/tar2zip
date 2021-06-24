@@ -1,18 +1,21 @@
 package de.julielab.tools.tar2zip;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import static org.assertj.core.api.Assertions.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 public class Tar2ZipTest {
 
-    @BeforeClass
-    @AfterClass
+    @BeforeAll
+    @AfterAll
     public static void cleanup() throws IOException {
         Files.deleteIfExists(Paths.get("src/test/resources/archive.zip"));
     }

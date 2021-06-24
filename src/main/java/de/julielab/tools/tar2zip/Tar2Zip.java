@@ -5,10 +5,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.zip.ZipEntry;
@@ -19,19 +16,36 @@ import java.util.zip.ZipOutputStream;
  */
 public class Tar2Zip {
     public static void main(String args[]) {
-        if (args.length < 1 || args.length > 2) {
-            System.err.println("Usage: " + Tar2Zip.class.getSimpleName() + " <tar.gz file> [destination .zip file]");
+        if (args.length < 1 || args.length > 3) {
+            System.err.println("Usage: " + Tar2Zip.class.getSimpleName() + " <tar.gz file> [destination .zip file; default: <source base name>.zip] [override newer; default: false]");
             System.exit(1);
         }
         String tarPath = args[0];
-        String zipPath = args.length == 1 ? stripExtension(tarPath) + ".zip" : args[1];
+        String zipPath;
+        boolean arg1IsBoolean = args.length > 1 && ("true".equals(args[1]) || "false".equals(args[1]));
+        if(args.length == 1 || arg1IsBoolean)
+            zipPath = stripExtension(tarPath) + ".zip";
+        else
+            zipPath = args[1];
+        boolean overrideNewer = false;
+        if (arg1IsBoolean)
+            overrideNewer = Boolean.parseBoolean(args[1]);
+        else if (args.length == 3)
+            overrideNewer = Boolean.parseBoolean(args[2]);
 
-        convert(tarPath, zipPath);
+        convert(tarPath, zipPath, overrideNewer);
     }
 
-    private static void convert(String tarPath, String zipPath) {
+    private static void convert(String tarPath, String zipPath, boolean overrideNewer) {
         long time = System.currentTimeMillis();
-        Path pathToZip = Paths.get(zipPath);
+        if (!overrideNewer) {
+            File tarFile = new File(tarPath);
+            File zipFile = new File(zipPath);
+            if (tarFile.lastModified() < zipFile.lastModified()) {
+                System.out.println(zipPath + " is newer than " + tarPath + ". Terminating program.");
+                return;
+            }
+        }
         try (TarArchiveInputStream tarInput = new TarArchiveInputStream(new GzipCompressorInputStream(new FileInputStream(tarPath)));
              ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipPath))) {
 
